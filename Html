@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análise de Público por DDD</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Análise de Público por DDD</h1>
+        
+        <!-- Campo para inserir números manualmente -->
+        <textarea id="phoneInput" placeholder="Insira os números de telefone com DDD, separados por vírgula ou espaço"></textarea>
+        
+        <!-- Campo para carregar arquivo -->
+        <div class="file-upload">
+            <label for="fileInput">Ou carregue um arquivo (.txt ou .csv):</label>
+            <input type="file" id="fileInput" accept=".txt,.csv">
+        </div>
+        
+        <!-- Botão de análise -->
+        <button id="analyzeButton">Analisar</button>
+        
+        <!-- Resultados -->
+        <div id="result">
+            <h2>Distribuição por Região:</h2>
+            <canvas id="regionChart"></canvas>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
+
+
+
+document.getElementById('analyzeButton').addEventListener('click', function() {
+    const phoneInput = document.getElementById('phoneInput').value;
+    const fileInput = document.getElementById('fileInput').files[0];
+
+    if (phoneInput || fileInput) {
+        if (fileInput) {
+            // Processar arquivo
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const fileContent = event.target.result;
+                const phonesFromFile = fileContent.split(/[\n\r,]+/).filter(Boolean);
+                analyzePhones(phonesFromFile);
+            };
+            reader.readAsText(fileInput);
+        } else {
+            // Processar entrada manual
+            const phones = phoneInput.split(/[\s,]+/).filter(Boolean);
+            analyzePhones(phones);
+        }
+    } else {
+        alert("Por favor, insira números de telefone ou carregue um arquivo.");
+    }
+});
+
+function analyzePhones(phones) {
+    const dddCount = {};
+    const invalidNumbers = [];
+
+    // Mapeamento de DDDs para regiões
+    const dddRegions = {
+        '11': 'Sudeste', '12': 'Sudeste', '13': 'Sudeste', '14': 'Sudeste', '15': 'Sudeste',
+        '16': 'Sudeste', '17': 'Sudeste', '18': 'Sudeste', '19': 'Sudeste', '21': 'Sudeste',
+        '22': 'Sudeste', '24': 'Sudeste', '27': 'Sudeste', '28': 'Sudeste', '31': 'Sudeste',
+        '32': 'Sudeste', '33': 'Sudeste', '34': 'Sudeste', '35': 'Sudeste', '37': 'Sudeste',
+        '38': 'Sudeste', '41': 'Sul', '42': 'Sul', '43': 'Sul', '44': 'Sul', '45': 'Sul',
+        '46': 'Sul', '47': 'Sul', '48': 'Sul', '49': 'Sul', '51': 'Sul', '53': 'Sul',
+        '54': 'Sul', '55': 'Sul', '61': 'Centro-Oeste', '62': 'Centro-Oeste', '63': 'Centro-Oeste',
+        '64': 'Centro-Oeste', '65': 'Centro-Oeste', '66': 'Centro-Oeste', '67': 'Centro-Oeste',
+        '68': 'Centro-Oeste', '69': 'Centro-Oeste', '71': 'Nordeste', '73': 'Nordeste',
+        '74': 'Nordeste', '75': 'Nordeste', '77': 'Nordeste', '79': 'Nordeste', '81': 'Nordeste',
+        '82': 'Nordeste', '83': 'Nordeste', '84': 'Nordeste', '85': 'Nordeste', '86': 'Nordeste',
+        '87': 'Nordeste', '88': 'Nordeste', '89': 'Nordeste', '91': 'Norte', '92': 'Norte',
+        '93': 'Norte', '94': 'Norte', '95': 'Norte', '96': 'Norte', '97': 'Norte', '98': 'Norte',
+        '99': 'Norte'
+    };
+
+    phones.forEach(phone => {
+        const ddd = phone.substring(0, 2);
+        if (dddRegions[ddd] && phone.length >= 10) {
+            const region = dddRegions[ddd];
+            dddCount[region] = (dddCount[region] || 0) + 1;
+        } else {
+            invalidNumbers.push(phone);
+        }
+    });
+
+    // Exibir resultados
+    displayResults(dddCount, invalidNumbers);
+}
+
+function displayResults(dddCount, invalidNumbers) {
+    const resultDiv = document.getElementById('result');
+    let resultHTML = '<h2>Distribuição por Região:</h2>';
+
+    if (Object.keys(dddCount).length > 0) {
+        // Criar gráfico
+        const ctx = document.getElementById('regionChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(dddCount),
+                datasets: [{
+                    label: 'Números por Região',
+                    data: Object.values(dddCount),
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    } else {
+        resultHTML += '<p>Nenhum número válido encontrado.</p>';
+    }
+
+    if (invalidNumbers.length > 0) {
+        resultHTML += '<h2>Números Inválidos:</h2>';
+        resultHTML += `<p>${invalidNumbers.join(', ')}</p>`;
+    }
+
+    resultDiv.innerHTML = resultHTML;
+}
